@@ -85,6 +85,7 @@ def main():
     option["Bandwidth"] = {"Subsite": 2000, "Prime": 1008 , "GeoPrime": 10000}
     siteConfig[name] = option
 
+    # for testing
     #option = OrderedDict()
     #name = "Ghost"
     #option["Name"]      = name
@@ -167,28 +168,35 @@ def main():
     option["Bandwidth"] = {"Subsite": 2000}
     siteConfig[name] = option
 
-
-    siteGraph = getGraph(siteConfig)
-    
+    ##########################
+    # Construct the graph
+    ##########################
+    siteGraph = getGraph(siteConfig)    
     print(siteGraph)
 
-    #print(siteGraph.find_shortest_path("Bronte", "HRPS"))
-    #print(siteGraph.find_shortest_path("HRPS", "Georgetown"))
-    #print(siteGraph.find_shortest_path("HRPS", "Rattlesnake"))
+   
+    ##########################
+    # Run the test
+    ##########################
+    runTest(siteConfig, siteGraph)
 
-    runTest("HRPS", "HRPS", siteConfig, siteGraph)
 
 
+def runTest(siteConfig, siteGraph):
+    "This function is designed to run the bandwidth loading tests"
+    "Tests are 'hard' coded in place"
 
-def runTest(primeSiteName, coreSiteName, siteConfig, siteGraph):
-    
+    #############################
+    # Get all the loading senarios for Site to Prime test
+   
+    # First list a list of unique 'Site' numbers that are avaliable in the network
     uniqueSite = []
     for key in siteConfig:
         uniqueSite.append(siteConfig[key]["Site"])
-
         pass
-
     uniqueSite = list(set(uniqueSite))
+
+    # for each site number, find all the Prime and GeoPrime sites
     uniquePrimeSite = {}
     for siteNum in uniqueSite:
         uniquePrimeSite[siteNum] = []
@@ -203,7 +211,8 @@ def runTest(primeSiteName, coreSiteName, siteConfig, siteGraph):
             pass
         pass
 
-    
+    # delete any site number that has not Prime or GeoPrime location
+    # this is due to fact that 'Dispatch' locations have a site number designation of 0
     keysToDelete = []
     for key in uniquePrimeSite:
         print key, uniquePrimeSite[key], len(uniquePrimeSite[key])
@@ -211,12 +220,14 @@ def runTest(primeSiteName, coreSiteName, siteConfig, siteGraph):
             keysToDelete.append(key)
             pass
         pass
-    print keysToDelete
     for key in keysToDelete:
         del uniquePrimeSite[key]
 
+    # Debug Output
     print uniquePrimeSite
 
+    # for each Prime/GeoPrime site, find all the loading senarios for SUT to PUT graphs
+    # Store this information for later use
     SUT_to_PUT_loading = {}
     for siteNum in uniquePrimeSite:
         if(len(uniquePrimeSite[siteNum]) == 0):
@@ -230,21 +241,31 @@ def runTest(primeSiteName, coreSiteName, siteConfig, siteGraph):
         pass
 
 
+    ##################################
+    # This is PUT to CUT loading senairo
+    # Basic idea: create all combinations of Prime/GeoPrime at can be active for all site numbers
+    # Similarly, create all combinations of core/DSR that can be active in a given zone
+    # then compute the loading for all senarios
+
+    # this is creating the correct input format for itertool to create the 
+    # cartesian product of prime/GeoPrime sites
     primeSiteList = []
     for siteNum in uniquePrimeSite:
         primeSiteList.append(uniquePrimeSite[siteNum])
         pass
-    print primeSiteList
 
+    # Debug output
+    print primeSiteList
     activePrimeSiteCombinations = itertools.product(*primeSiteList)
 
-    # list of active core + DSR core in a given zone
+    # first find the unique zones in the graph
     uniqueZone = []
     for key in siteConfig:
         uniqueZone.append(siteConfig[key]["Zone"])
         pass
-
     uniqueZone = list(set(uniqueZone))
+
+    # for each zone, find the list of Cores/DSR cores
     uniqueZoneSite = {}
     for zoneNum in uniqueZone:
         uniqueZoneSite[zoneNum] = []
@@ -259,25 +280,28 @@ def runTest(primeSiteName, coreSiteName, siteConfig, siteGraph):
             pass
         pass
 
+    # debug output
     print uniqueZoneSite
 
-    
+    # For each zone in the graph
+    # loop over all Core/DSRCore
+    # compute the loading for each Prime/GeoPrime senairo
     PUT_TO_CUT_loading = {}
-
     for zoneNum in uniqueZoneSite:
         for activeCore in uniqueZoneSite[zoneNum]:
             PUT_TO_CUT_loading[activeCore] = {}
             for currActivePrime in itertools.product(*primeSiteList):
-                print 'Running Loading', activeCore, currActivePrime
+                #print 'Running Loading', activeCore, currActivePrime
                 PUT_TO_CUT_loading[activeCore][currActivePrime] = runPrimeToCoreTest(activeCore, currActivePrime, siteConfig, siteGraph)
                 pass
             pass
         pass
 
 
-    # DUT to CUT loading
+    ##################################
+    # This is DUT to CUT loading senairo
+    # For each core, compute the loading senario for where all dispatch sites talk to an active core/DSR
     DUT_TO_CUT_loading = {}
-    print "DUT to CUT loading"
     
     for zoneNum in uniqueZoneSite:
         for activeCore in uniqueZoneSite[zoneNum]:
@@ -286,16 +310,22 @@ def runTest(primeSiteName, coreSiteName, siteConfig, siteGraph):
             pass
         pass
 
+    ######################################
+    # TODO: Compute the GeoPrime -> Prime loading
+    # TODO: Compute the DSR -> Core Loading
+    # TODO: Sum all possible senarios and find the worst case loading for each node
+
+
+    ########################################
+    # Long term future list
+    # GUI? :P
+
 
 def runDispatchToCoreTest(activeCore, siteConfig, siteGraph):
-    # define the struture to store graph bandwidth loading
-    bwLoad = {}
-    for key in siteConfig:
-        bwLoad[key] = {}
-        for keyprime in siteConfig:
-            bwLoad[key][keyprime] = 0
-            pass
-        pass
+    "This function computes the loading from all dispatch site in a zone to activeCore location"
+
+    # get the datastructure of bw loading
+    bwLoad = getBwMap(siteConfig)
 
     # get the dispatch sites in the same zone
     dispatchList = []
@@ -311,94 +341,28 @@ def runDispatchToCoreTest(activeCore, siteConfig, siteGraph):
         dispatchList.append(key)
         pass
 
-    # find the shortest path from each dispatch to the core
-    for dispatch in dispatchList:
-        print 'Path from', dispatch, activeCore
-        pathList = siteGraph.find_shortest_path(dispatch, activeCore)
-        #print pathList
-        if(len(pathList) == 1):
-            path = pathList[0]
-        else:
-            print pathList
-            xString = input("Pick your path: ")
-            x = int(xString)
-            path = pathList[x]
-            pass
-
-        bwSite = siteConfig[dispatch]['Bandwidth']['Dispatch']
-        
-        for i in range(0, len(path)-1):
-            bwLoad[path[i]][path[i+1]] += bwSite
-            #print "loading", path[i], path[i+1], bwSite
-            pass
-        pass
-
-    for key in siteConfig:
-        for keyprime in siteConfig:
-            if(bwLoad[key][keyprime] == 0):
-                continue
-            print key, keyprime, bwLoad[key][keyprime]
-            pass
-        pass
-
+    # load the network for all dispatch to active core
+    bwLoad = computeLoading(dispatchList, activeCore, bwLoad, 'Dispatch', siteConfig, siteGraph)
+    
     return bwLoad
 
-     
 
 def runPrimeToCoreTest(activeCore, currActivePrime, siteConfig, siteGraph):
-    # define the struture to store graph bandwidth loading
-    bwLoad = {}
-    for key in siteConfig:
-        bwLoad[key] = {}
-        for keyprime in siteConfig:
-            bwLoad[key][keyprime] = 0
-            pass
-        pass
+    " This function computes the loading for active prime/geoprime locations to active cores in a zone"
 
-    # find the shortest path from each subsite to the prime
-    for prime in currActivePrime:
-        print 'Path from', prime, activeCore
-        pathList = siteGraph.find_shortest_path(prime, activeCore)
-        #print pathList
-        if(len(pathList) == 1):
-            path = pathList[0]
-        else:
-            print pathList
-            xString = input("Pick your path: ")
-            x = int(xString)
-            path = pathList[x]
-            pass
+    # get the datastructure of bw loading
+    bwLoad = getBwMap(siteConfig)
 
-        bwSite = siteConfig[prime]['Bandwidth']['Prime']
-        
-        for i in range(0, len(path)-1):
-            bwLoad[path[i]][path[i+1]] += bwSite
-            #print "loading", path[i], path[i+1], bwSite
-            pass
-        pass
-
-    for key in siteConfig:
-        for keyprime in siteConfig:
-            if(bwLoad[key][keyprime] == 0):
-                continue
-            print key, keyprime, bwLoad[key][keyprime]
-            pass
-        pass
-
+    bwLoad = computeLoading(currActivePrime, activeCore, bwLoad, 'Prime', siteConfig, siteGraph)
     return bwLoad
 
 
 
 def runSubSiteToPrimeTest(primeSiteName, siteConfig, siteGraph):
-    # define the struture to store graph bandwidth loading
-    bwLoad = {}
-    for key in siteConfig:
-        bwLoad[key] = {}
-        for keyprime in siteConfig:
-            bwLoad[key][keyprime] = 0
-            pass
-        pass
-
+    " This function computes the loading for active subsite locations to active primes in a site"    
+    
+    # get the datastructure of bw loading
+    bwLoad = getBwMap(siteConfig)
 
     # subsite -> prime test
     # first get the list of all subsites
@@ -415,12 +379,20 @@ def runSubSiteToPrimeTest(primeSiteName, siteConfig, siteGraph):
         subsiteList.append(key)
         pass
 
+    bwLoad = computeLoading(subsiteList, primeSiteName, bwLoad, 'Subsite', siteConfig, siteGraph)
+    return bwLoad
 
-    # find the shortest path from each subsite to the prime
-    for subsite in subsiteList:
-        #print subsite, primeSiteName
-        #print(siteGraph.find_shortest_path(subsite, primeSiteName))
-        pathList = siteGraph.find_shortest_path(subsite, primeSiteName)
+
+def computeLoading(fromSiteList, toSite, bwLoad, BandwidthOption, siteConfig, siteGraph):
+    "This function computes the loading on the network, when all sites in the fromSiteList"
+    "communicates to the toSite. The bandwidth for each site is choosen by the BandwidthOption input variable"
+
+    # find the shortest path from each fromSite to toSite
+    for fromSite in fromSiteList:
+        #print 'Path from', fromSite, toSite
+        pathList = siteGraph.find_shortest_path(fromSite, toSite)
+
+        # if there is one path, pick that path, otherwise poll the user to pick one
         if(len(pathList) == 1):
             path = pathList[0]
         else:
@@ -430,14 +402,15 @@ def runSubSiteToPrimeTest(primeSiteName, siteConfig, siteGraph):
             path = pathList[x]
             pass
 
-        bwSite = siteConfig[subsite]['Bandwidth']['Subsite']
-        
+        # for each edge in the path, load the line with the bandwidth 
+        bwSite = siteConfig[fromSite]['Bandwidth'][BandwidthOption]
         for i in range(0, len(path)-1):
             bwLoad[path[i]][path[i+1]] += bwSite
             #print "loading", path[i], path[i+1], bwSite
             pass
         pass
 
+    # print for debugging
     for key in siteConfig:
         for keyprime in siteConfig:
             if(bwLoad[key][keyprime] == 0):
@@ -445,11 +418,19 @@ def runSubSiteToPrimeTest(primeSiteName, siteConfig, siteGraph):
             print key, keyprime, bwLoad[key][keyprime]
             pass
         pass
-
     return bwLoad
 
 
-
+def getBwMap(siteConfig):
+    "define the struture to store graph bandwidth loading"    
+    bwLoad = {}
+    for key in siteConfig:
+        bwLoad[key] = {}
+        for keyprime in siteConfig:
+            bwLoad[key][keyprime] = 0
+            pass
+        pass
+    return bwLoad
 
 
 def getGraph(siteConfig):
