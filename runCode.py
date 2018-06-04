@@ -21,7 +21,7 @@ def main():
     # define the site configuration
     ######################################
     """
-    ### HALTON SYSTEM ###
+    ### TESTING SYSTEM 1 ###
 
     option = OrderedDict()
     name = "HRPS"
@@ -177,12 +177,12 @@ def main():
     siteConfig[name] = option
     """
 
-    ### WINDSOR SYSTEM ###
+    ### TESTING SYSTEM TWO ###
 
     option = OrderedDict()
     name = "Ouellette"
     option["Name"] = name
-    option["Link"] = ["CityHall", "WindsorTransit", "Rivard", "TELUS", "HolidayInn", "WindsorFire"]
+    option["Link"] = ["CityHall", "WTransit", "Rivard", "TELUS", "HolidayInn", "WFire"]
     option["Type"] = ["Prime", "Core", "Subsite"]
     option["Zone"] = 1
     option["Site"] = 1
@@ -193,7 +193,7 @@ def main():
     option = OrderedDict()
     name = "CityHall"
     option["Name"] = name
-    option["Link"] = ["WindsorPolice", "Ouellette", "WindsorTransit"]
+    option["Link"] = ["WPolice", "Ouellette", "WTransit"]
     option["Type"] = ["DSRCore", "GeoPrime"]
     option["Zone"] = 1
     option["Site"] = 1
@@ -201,9 +201,9 @@ def main():
     siteConfig[name] = option
 
     option = OrderedDict()
-    name = "WindsorPolice"
+    name = "WPolice"
     option["Name"] = name
-    option["Link"] = ["CityHall", "WindsorFire"]
+    option["Link"] = ["CityHall", "WFire"]
     option["Type"] = ["Dispatch"]
     option["Zone"] = 1
     option["Site"] = 1
@@ -211,9 +211,9 @@ def main():
     siteConfig[name] = option
 
     option = OrderedDict()
-    name = "WindsorFire"
+    name = "WFire"
     option["Name"] = name
-    option["Link"] = ["Ouellette", "WindsorPolice"]
+    option["Link"] = ["Ouellette", "WPolice"]
     option["Type"] = ["Dispatch"]
     option["Zone"] = 1
     option["Site"] = 1
@@ -221,7 +221,7 @@ def main():
     siteConfig[name] = option
 
     option = OrderedDict()
-    name = "WindsorTransit"
+    name = "WTransit"
     option["Name"] = name
     option["Link"] = ["Ouellette", "CityHall", "Rivard"]
     option["Type"] = ["Dispatch"]
@@ -243,7 +243,7 @@ def main():
     option = OrderedDict()
     name = "Rivard"
     option["Name"] = name
-    option["Link"] = ["Ouellette", "WindsorTransit"]
+    option["Link"] = ["Ouellette", "WTransit"]
     option["Type"] = ["Subsite"]
     option["Zone"] = 1
     option["Site"] = 1
