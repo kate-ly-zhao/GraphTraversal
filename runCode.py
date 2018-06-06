@@ -347,6 +347,16 @@ def runTest(siteConfig, siteGraph):
     ####################
     # MetaInformation
     ####################
+    
+    # First checking for isolated sites - to be outputted at end
+    isolatedSite = []
+    for key in siteConfig:
+        if not siteConfig[key]['Link']:
+            isolatedSite.append(siteConfig[key]["Name"])
+            del siteConfig[key] # Deleting isolated sites from OrderedDict to make calculations easier
+            pass
+        # elif ('Prime' in siteConfig[key]['Type'])
+        pass
 
     # First list a list of unique 'Site' numbers that are available in the network
     uniqueSite = []
@@ -602,6 +612,9 @@ def runTest(siteConfig, siteGraph):
             pass
         pass
 
+    print '---------------------------------------------------------'
+    print "Isolated Sites: ", isolatedSite
+    print '---------------------------------------------------------'
 
     # TODO: Find max loading for each path, and tell which combination of active core and prime lead to that
     # TODO: Allow for a physical site to be in multiple zones
