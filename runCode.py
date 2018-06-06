@@ -865,41 +865,17 @@ def cutSite(siteConfig):
 
     x_site = raw_input('Input name of site to destroy: ')
 
-    """for sites in siteConfig:
-        if siteConfig[x_site]['Name'] == siteConfig[sites]['Name']:
-            if siteConfig[sites]['Type'] == 'DSRCore':
-                print siteConfig[sites]['Link']
-                pass
-            pass
-        pass"""
-
-    #TODO: Delete links associated with removed site
-
     for key in siteConfig:
-        print "Area 51: ", siteConfig[x_site]['Name']
-        print "Highways: ", siteConfig[key]['Link']
-        print "Highways Specifics: ", siteConfig[key]['Link'][0]
-        print "Key: ", key
-
         for links in siteConfig[key]['Link']:
-            if siteConfig[x_site]['Name'] == siteConfig[key]['Link']:
-                print "true"
-                pass
-
-            #print "Link: ", links
-            #pass
-
-        # if siteConfig[x_site]['Name'] == siteConfig[key]['Link']:
-            # print "Key: ", siteConfig[key]['Link']
-            # link_index = siteConfig[key]['Link'].index(x_site)
-            # del siteConfig[key]['Link'][link_index]
-            # pass
+            if x_site == links:
+                link_index = siteConfig[key]['Link'].index(links)
+                del siteConfig[key]['Link'][link_index] # Deleting links associated with missing site
+            pass
         pass
 
     del siteConfig[x_site] # Deleting entire OrderedDict item
 
     for key in siteConfig:
-        # print siteConfig[key]['Link']
         graphDef[siteConfig[key]['Name']] = siteConfig[key]['Link']
         pass
     return Graph(graphDef)
