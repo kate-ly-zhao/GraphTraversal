@@ -718,7 +718,9 @@ def computeLoading(fromSiteList, toSite, bwLoad, BandwidthOption, siteConfig, si
         pathList = siteGraph.find_shortest_path(fromSite, toSite)
 
         # if there is one path, pick that path, otherwise poll the user to pick one
-        # if (len(pathList) == 0): # Can I account for floating islands here?
+        if (len(pathList) == 0): # Can I account for floating islands here?
+            print "Error: No path available"
+            break
 
         if (len(pathList) == 1):
             path = pathList[0]
